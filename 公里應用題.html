@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數學闖關：花蓮客運路線與長度計算大考驗</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #a8ede6);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 95vh;
+        }
+
+        .game-container {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 650px;
+            text-align: center;
+            box-sizing: border-box;
+            position: relative;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-8px); }
+            80% { transform: translateX(8px); }
+            100% { transform: translateX(0); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        .bgm-bar {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+        .bgm-btn {
+            background: #dfe6e9;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #2d3436;
+        }
+        .bgm-btn:hover { background: #b2bec3; }
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        .question-card {
+            background: #f1f2f6;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .q-category {
+            font-size: 13px;
+            color: #0984e3;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .q-title {
+            font-size: 15px;
+            color: #2d3436;
+            font-weight: bold;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        /* 路線圖預覽圖表卡片 */
+        .map-box {
+            background: #ffffff;
+            border: 2px dashed #0984e3;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .map-box canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background-color: #ffffff;
+            color: #2d3436;
+            border: 2px solid #b2bec3;
+            padding: 12px 15px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        .option-btn:hover {
+            background-color: #0984e3;
+            color: white;
+            border-color: #0984e3;
+        }
+
+        #feedback {
+            font-size: 16px;
+            font-weight: bold;
+            min-height: 25px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .correct { color: #00b894; }
+        .incorrect { color: #d63031; }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .start-btn {
+            background-color: #0984e3;
+            color: white;
+            font-size: 18px;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(9, 132, 227, 0.4);
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .start-btn:hover { background-color: #74b9ff; }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="main-container">
+    <!-- 背景音樂開關 -->
+    <div class="bgm-bar">
+        <button class="bgm-btn" id="bgm-toggle" onclick="toggleBGM()">🎵 音樂: 關</button>
+    </div>
+
+    <!-- 1. 開始畫面 -->
+    <div id="start-screen" class="screen active">
+        <h2>🚌 數學闖關：花蓮客運路線與長度計算</h2>
+        <p style="color: #636e72; font-size: 14px; margin-bottom: 20px;">結合花蓮火車站到天祥路線圖與生活長度換算，共 5 道應用題大挑戰！每題 20 分。</p>
+        <button class="start-btn" onclick="startGame()">開始挑戰 🚀</button>
+    </div>
+
+    <!-- 2. 遊戲進行畫面 -->
+    <div id="game-screen" class="screen">
+        <h2>✨ 直式計算與距離大考驗</h2>
+        <div class="stats-bar">
+            <span>題目: <span id="current-q">1</span>/5</span>
+            <span>積分: <span id="score">0</span></span>
+            <span>生命: <span id="lives">❤️❤️❤️</span></span>
+        </div>
+
+        <div class="question-card">
+            <div class="q-category" id="question-category">類別</div>
+            
+            <!-- 路線圖圖表區（僅在第一部分題目顯示） -->
+            <div class="map-box" id="map-container" style="display: none;">
+                <div style="font-size: 12px; color: #0984e3; font-weight: bold; margin-bottom: 5px;">📍 花蓮火車站至天祥路線圖示意</div>
+                <canvas id="routeCanvas" width="560" height="120"></canvas>
+            </div>
+
+            <div class="q-title" id="question-text">載入中...</div>
+            <div class="options-container" id="mc-options">
+                <!-- 動態生成選項 -->
+            </div>
+        </div>
+
+        <div id="feedback"></div>
+    </div>
+
+    <!-- 3. 結算畫面 -->
+    <div id="end-screen" class="screen">
+        <h2 id="end-title">🎉 恭喜完成全部挑戰！</h2>
+        <p id="end-message" style="font-size: 16px; color: #2d3436; margin: 20px 0;"></p>
+        <button class="start-btn" onclick="startGame()">再玩一次 ⭐</button>
+    </div>
+</div>
+
+<script>
+    const routeQuestions = [
+        {
+            cat: "【第(1)題 - 子題①】花蓮火車站到太魯閣",
+            hasMap: true,
+            q: "(1) 客運從花蓮火車站到太魯閣（經七星潭），共行駛了幾公里幾公尺？<br>(提示：5公里700公尺 ＋ 18公里800公尺 ＋ 1公里800公尺)",
+            options: ["① 25公里 300公尺", "② 26公里 300公尺", "③ 24公里 500公尺", "④ 25公里 800公尺"],
+            ans: 0
+        },
+        {
+            cat: "【第(1)題 - 子題②】九曲洞到太魯閣",
+            hasMap: true,
+            q: "(2) 客運從九曲洞到太魯閣，共行駛了幾公里幾公尺？<br>(提示：看圖中由九曲洞經遊客中心到太魯閣的距離組合，或 12公里300公尺 ＋ 1公里800公尺)",
+            options: ["① 13公里 500公尺", "② 14公里 100公尺", "③ 14公里 100公尺", "④ 12公里 300公尺"],
+            ans: 1
+        },
+        {
+            cat: "【第(1)題 - 子題③】太魯閣遊客中心到天祥",
+            hasMap: true,
+            q: "(3) 客運從太魯閣遊客中心到天祥共行駛 17公里600公尺，已知九曲洞到天祥的路線長是 12公里300公尺。請問太魯閣遊客中心到九曲洞有多遠？",
+            options: ["① 4公里 300公尺", "② 5公里 300公尺", "③ 4公里 800公尺", "④ 6公里 100公尺"],
+            ans: 1 
+        },
+        {
+            cat: "【第(1)題 - 子題④】路線長度比較",
+            hasMap: true,
+            q: "(4) 從七星潭到太魯閣的路線長，比太魯閣遊客中心到九曲洞還要長幾公里幾公尺？",
+            options: ["① 11公里 200公尺", "② 12公里 200公尺", "③ 10公里 900公尺", "④ 13公里 0公尺"],
+            ans: 1 
+        },
+        {
+            cat: "【第(2)題】日月潭與福隆鐵馬隧道長度差",
+            hasMap: false,
+            q: "(2) 日月潭環潭自行車道全長 33公里，福隆舊草嶺鐵馬隧道全長 2167公尺（合 2公里167公尺），兩者的長度相差幾公里幾公尺？<br>(提示：33公里 0公尺 － 2公里 167公尺)",
+            options: ["① 30公里 833公尺", "② 31公里 167公尺", "③ 30公里 167公尺", "④ 31公里 833公尺"],
+            ans: 0 
+        }
+    ];
+
+    let currentIndex = 0;
+    let score = 0;
+    let lives = 3;
+
+    let audioCtx = null;
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playCorrectSound() {
+        initAudio();
+        if (!audioCtx) return;
+        let now = audioCtx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.3, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.25);
+        });
+    }
+
+    function playWrongSound() {
+        initAudio();
+        if (!audioCtx) return;
+        let now = audioCtx.currentTime;
+        [220, 165].forEach((freq, idx) => {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+            gain.gain.setValueAtTime(0.25, now + idx * 0.12);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.12);
+            osc.stop(now + idx * 0.12 + 0.2);
+        });
+    }
+
+    let bgmInterval = null;
+    let isBgmPlaying = false;
+    function toggleBGM() {
+        initAudio();
+        isBgmPlaying = !isBgmPlaying;
+        const btn = document.getElementById("bgm-toggle");
+        if (isBgmPlaying) {
+            btn.innerText = "🎵 音樂: 開";
+            startBGM();
+        } else {
+            btn.innerText = "🎵 音樂: 關";
+            stopBGM();
+        }
+    }
+
+    function startBGM() {
+        if (bgmInterval) return;
+        const notes = [329.63, 329.63, 392.00, 392.00, 329.63, 329.63, 261.63];
+        let index = 0;
+        bgmInterval = setInterval(() => {
+            if (!isBgmPlaying || !audioCtx) return;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(notes[index], audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.25);
+            index = (index + 1) % notes.length;
+        }, 300);
+    }
+
+    function stopBGM() {
+        if (bgmInterval) {
+            clearInterval(bgmInterval);
+            bgmInterval = null;
+        }
+    }
+
+    function startGame() {
+        initAudio();
+        currentIndex = 0;
+        score = 0;
+        lives = 3;
+
+        document.getElementById("start-screen").classList.remove("active");
+        document.getElementById("end-screen").classList.remove("active");
+        document.getElementById("game-screen").classList.add("active");
+
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        if (lives <= 0) {
+            endGame(false);
+            return;
+        }
+        if (currentIndex >= routeQuestions.length) {
+            endGame(true);
+            return;
+        }
+
+        const item = routeQuestions[currentIndex];
+
+        document.getElementById("current-q").innerText = currentIndex + 1;
+        document.getElementById("score").innerText = score;
+        document.getElementById("lives").innerText = "❤️".repeat(lives);
+        document.getElementById("question-category").innerText = item.cat;
+        document.getElementById("question-text").innerHTML = item.q;
+        document.getElementById("feedback").innerText = "";
+
+        const mapBox = document.getElementById("map-container");
+        if (item.hasMap) {
+            mapBox.style.display = "block";
+            drawRouteMap();
+        } else {
+            mapBox.style.display = "none";
+        }
+
+        const mcOptions = document.getElementById("mc-options");
+        mcOptions.innerHTML = "";
+        item.options.forEach((opt, idx) => {
+            let btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(idx, item.ans);
+            mcOptions.appendChild(btn);
+        });
+    }
+
+    function drawRouteMap() {
+        const canvas = document.getElementById("routeCanvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#2d3436";
+        ctx.font = "bold 12px 'Segoe UI'";
+
+        ctx.beginPath();
+        ctx.moveTo(50, 40); ctx.lineTo(230, 40); ctx.lineTo(480, 40);
+        ctx.strokeStyle = "#0984e3"; ctx.lineWidth = 3; ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(80, 95); ctx.lineTo(260, 95); ctx.lineTo(480, 95);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(480, 40); ctx.lineTo(480, 95);
+        ctx.stroke();
+
+        [ [50,40], [230,40], [480,40], [80,95], [260,95], [480,95] ].forEach(pt => {
+            ctx.beginPath();
+            ctx.arc(pt[0], pt[1], 5, 0, Math.PI * 2);
+            ctx.fillStyle = "#d63031"; ctx.fill();
+        });
+
+        ctx.fillStyle = "#2d3436";
+        ctx.fillText("花蓮火車站", 20, 25);
+        ctx.fillText("七星潭", 210, 25);
+        ctx.fillText("太魯閣", 465, 25);
+        ctx.fillText("天祥(?km)", 60, 115);
+        ctx.fillText("九曲洞", 240, 115);
+        ctx.fillText("太魯閣遊客中心", 430, 115);
+
+        ctx.fillStyle = "#e17055";
+        ctx.font = "bold 11px 'Segoe UI'";
+        ctx.fillText("5公里700公尺", 100, 32);
+        ctx.fillText("18公里800公尺", 300, 32);
+        ctx.fillText("1公里800公尺", 485, 70);
+        ctx.fillText("?公里?公尺", 130, 112);
+        ctx.fillText("12公里300公尺", 320, 112);
+    }
+
+    function checkAnswer(userIndex, correctIndex) {
+        const feedbackEl = document.getElementById("feedback");
+
+        if (userIndex === correctIndex) {
+            playCorrectSound();
+            feedbackEl.className = "correct";
+            feedbackEl.innerText = "✨ 太棒了！直式計算正確！ +20 分";
+            score += 20;
+            document.getElementById("score").innerText = score;
+
+            setTimeout(() => {
+                currentIndex++;
+                loadQuestion();
+            }, 1300);
+        } else {
+            handleWrong();
+        }
+    }
+
+    function handleWrong() {
+        playWrongSound();
+        lives--;
+        document.getElementById("lives").innerText = "❤️".repeat(lives);
+        
+        const container = document.getElementById("main-container");
+        container.classList.remove("shake");
+        void container.offsetWidth;
+        container.classList.add("shake");
+
+        const feedbackEl = document.getElementById("feedback");
+        feedbackEl.className = "incorrect";
+        if (lives > 0) {
+            feedbackEl.innerText = `❌ 哎呀算錯囉，再檢查一次直式進位！還剩 ${lives} 條命。`;
+        } else {
+            endGame(false);
+        }
+    }
+
+    function endGame(isWin) {
+        document.getElementById("game-screen").classList.remove("active");
+        document.getElementById("end-screen").classList.add("active");
+        const endTitle = document.getElementById("end-title");
+        const endMessage = document.getElementById("end-message");
+
+        if (isWin) {
+            endTitle.innerText = "🏆 太厲害了！全部路線距離挑戰成功！";
+            endMessage.innerHTML = `你順利完成了所有長度與直式應用題！<br>最終獲得總積分：<b>${score}</b> 分 ⭐`;
+        } else {
+            endTitle.innerText = "💥 挑戰失敗";
+            endMessage.innerHTML = `生命值用完囉！不要氣餒，再拿計算紙算一次吧！<br>最終得分：<b>${score}</b> 分`;
+        }
+    }
+</script>
+
+</body>
+</html>
